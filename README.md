@@ -4,7 +4,7 @@ WordPress plugin that adds Open Graph and Twitter Card meta tags so links shared
 
 ## What it does
 
-When a page is viewed on the frontend (with a valid license), the plugin outputs tags such as:
+When a page is viewed on the frontend, the plugin outputs tags such as:
 
 - `og:title`, `og:description`, `og:image`, `og:url`, `og:type`, `og:site_name`, `og:locale`
 - `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`
@@ -16,7 +16,6 @@ When a page is viewed on the frontend (with a valid license), the plugin outputs
 - **Default sharing description** — custom homepage / fallback text for social previews
 - **Per-page description** — optional Open Graph description box on posts and pages
 - **Smart fallbacks** — if no custom text is set, uses excerpt, then page content, then the site tagline
-- **License-gated** — Open Graph output requires a valid Techlaju (TLJ) license for the site domain
 
 ## Description priority
 
@@ -31,14 +30,8 @@ When a page is viewed on the frontend (with a valid license), the plugin outputs
 1. Upload the plugin to `wp-content/plugins/basic-opengraph` (or install from zip).
 2. Activate **Basic OpenGraph by Techlaju** in WordPress.
 3. Go to **Settings → OpenGraph**.
-4. Enter and verify your TLJ license code.
-5. Set the default image, title separator, and default sharing description.
-6. Optionally edit any post/page and fill in **Open Graph description** in the sidebar.
-
-## Requirements
-
-- WordPress (admin access to install plugins and manage settings)
-- Valid Techlaju license for this domain
+4. Set the default image, title separator, and default sharing description.
+5. Optionally edit any post/page and fill in **Open Graph description** in the sidebar.
 
 ## Developer
 

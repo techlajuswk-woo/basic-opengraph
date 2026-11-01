@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Basic OpenGraph by Techlaju
  * Description: Adds Open Graph tags with a selected logo, site name + page title, and excerpt or page text for description.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Techlaju
  * Author URI: https://www.techlaju.com
  * Plugin URI: https://www.techlaju.com
@@ -13,9 +13,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('BOG_VERSION', '1.1.0');
+define('BOG_VERSION', '1.2.0');
 define('BOG_TECHLAJU_URL', 'https://www.techlaju.com');
-define('BOG_LICENSE_SERVER_URL', 'https://lesen.techlaju.com');
 define('BOG_PLUGIN_FILE', __FILE__);
 define('BOG_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('BOG_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -24,18 +23,10 @@ define('BOG_OPTION_TITLE_SEP', 'bog_title_separator');
 define('BOG_OPTION_DESCRIPTION', 'bog_default_description');
 define('BOG_META_DESCRIPTION', '_bog_og_description');
 
-require_once BOG_PLUGIN_DIR . 'includes/class-bog-license.php';
-
-register_deactivation_hook(__FILE__, static function () {
-    wp_clear_scheduled_hook(BOG_License::CRON_HOOK);
-});
-
 final class Basic_OpenGraph
 {
     public static function register(): void
     {
-        BOG_License::register();
-
         add_action('admin_menu', [self::class, 'register_settings_page']);
         add_action('admin_init', [self::class, 'register_settings']);
         add_action('admin_enqueue_scripts', [self::class, 'enqueue_admin_assets']);
@@ -185,98 +176,16 @@ final class Basic_OpenGraph
             return;
         }
 
-        if (isset($_GET['bog_license_updated'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('License settings updated.', 'basic-opengraph') . '</p></div>';
-        }
-
         $logo_id = (int) get_option(BOG_OPTION_LOGO, 0);
         $separator = (string) get_option(BOG_OPTION_TITLE_SEP, '|');
         $default_description = (string) get_option(BOG_OPTION_DESCRIPTION, '');
         $logo_url = $logo_id > 0 ? wp_get_attachment_image_url($logo_id, 'medium') : '';
-        $license_key = get_option(BOG_License::OPTION_KEY, '');
-        $license_status = BOG_License::get_status();
-        $is_valid = !empty($license_status['valid']);
         ?>
         <div class="wrap bog-settings">
             <h1><?php esc_html_e('Basic OpenGraph by Techlaju', 'basic-opengraph'); ?></h1>
 
             <div class="bog-card">
-                <h2><?php esc_html_e('License', 'basic-opengraph'); ?></h2>
-                <p class="bog-status <?php echo $is_valid ? 'is-valid' : 'is-invalid'; ?>">
-                    <?php echo esc_html($license_status['message'] ?? __('Not licensed.', 'basic-opengraph')); ?>
-                </p>
-                <table class="form-table" role="presentation">
-                    <tr>
-                        <th scope="row"><?php esc_html_e('This website', 'basic-opengraph'); ?></th>
-                        <td><code><?php echo esc_html(BOG_License::get_site_domain()); ?></code></td>
-                    </tr>
-                    <?php if (!empty($license_status['licensed_domain'])) : ?>
-                        <tr>
-                            <th scope="row"><?php esc_html_e('Licensed for', 'basic-opengraph'); ?></th>
-                            <td><code><?php echo esc_html($license_status['licensed_domain']); ?></code></td>
-                        </tr>
-                    <?php endif; ?>
-                    <?php if (!empty($license_status['expires'])) : ?>
-                        <tr>
-                            <th scope="row"><?php esc_html_e('Expires', 'basic-opengraph'); ?></th>
-                            <td><?php echo esc_html(gmdate('j M Y', (int) $license_status['expires'])); ?></td>
-                        </tr>
-                    <?php endif; ?>
-                </table>
-
-                <?php if ($license_key !== '') : ?>
-                    <p><code><?php echo esc_html(BOG_License::mask_code($license_key)); ?></code></p>
-                <?php endif; ?>
-
-                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                    <?php wp_nonce_field('bog_license_action'); ?>
-                    <input type="hidden" name="action" value="bog_activate_license">
-                    <p>
-                        <label for="bog_license_key"><strong><?php esc_html_e('License code', 'basic-opengraph'); ?></strong></label><br>
-                        <input
-                            type="<?php echo $license_key !== '' ? 'password' : 'text'; ?>"
-                            class="regular-text code"
-                            id="bog_license_key"
-                            name="bog_license_key"
-                            value=""
-                            placeholder="<?php echo $license_key !== '' ? esc_attr__('Enter new code to replace', 'basic-opengraph') : 'TLJ-XXXX-XXXX-XXXX-XXXX'; ?>"
-                            autocomplete="off"
-                            spellcheck="false"
-                        >
-                    </p>
-                    <?php submit_button(__('Verify License', 'basic-opengraph'), 'primary', 'submit', false); ?>
-                    <p class="description">
-                        <?php
-                        echo wp_kses(
-                            sprintf(
-                                /* translators: 1: Techlaju link, 2: plugin slug */
-                                __('Enter the TLJ license code issued by %1$s for this domain. Plugin slug on the license server: %2$s', 'basic-opengraph'),
-                                '<a href="' . esc_url(BOG_TECHLAJU_URL) . '" target="_blank" rel="noopener noreferrer">Techlaju</a>',
-                                '<code>' . esc_html(BOG_License::PLUGIN_SLUG) . '</code>'
-                            ),
-                            [
-                                'a' => ['href' => true, 'target' => true, 'rel' => true],
-                                'code' => [],
-                            ]
-                        );
-                        ?>
-                    </p>
-                </form>
-
-                <?php if ($license_key !== '') : ?>
-                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin-top:8px;">
-                        <?php wp_nonce_field('bog_license_action'); ?>
-                        <input type="hidden" name="action" value="bog_deactivate_license">
-                        <?php submit_button(__('Remove License', 'basic-opengraph'), 'delete', 'submit', false); ?>
-                    </form>
-                <?php endif; ?>
-            </div>
-
-            <div class="bog-card">
                 <h2><?php esc_html_e('Open Graph settings', 'basic-opengraph'); ?></h2>
-                <?php if (!$is_valid) : ?>
-                    <p class="description"><?php esc_html_e('Activate a valid license to output Open Graph tags on the frontend.', 'basic-opengraph'); ?></p>
-                <?php endif; ?>
 
                 <form method="post" action="options.php">
                     <?php settings_fields('bog_settings'); ?>
@@ -364,10 +273,6 @@ final class Basic_OpenGraph
     public static function render_meta(): void
     {
         if (is_admin() || wp_is_json_request() || is_feed()) {
-            return;
-        }
-
-        if (!BOG_License::is_valid()) {
             return;
         }
 
